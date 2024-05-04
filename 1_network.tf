@@ -2,7 +2,7 @@
 ## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
 
 resource "aws_vpc" "ELK" {
-  cidr_block = var.VCN-CIDR
+  cidr_block = var.VPC-CIDR
   tags = {
     Name = "ELKVPC"
     Group = "ELK"

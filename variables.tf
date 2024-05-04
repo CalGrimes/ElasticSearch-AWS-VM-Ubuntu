@@ -34,7 +34,7 @@ variable "ssh_public_key" {
   default = ""
 }
 
-variable "VCN-CIDR" {
+variable "VPC-CIDR" {
   default = "10.1.0.0/16"
 }
 
