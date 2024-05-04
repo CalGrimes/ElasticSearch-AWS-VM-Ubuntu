@@ -1,10 +1,10 @@
+# ELK Quick Start - AWS
+
 ## Prerequisites
 
-- Permission to `manage` the following types of resources in your Oracle Cloud Infrastructure tenancy: `vcns`, `internet-gateways`, `route-tables`, `security-lists`, `subnets`, and `instances`.
+- Permission to `manage` the following types of resources in your AWS Cloud Infrastructure tenancy: `vpcs`, `internet-gateways`, `route-tables`, `security-groups`, `subnets`, and `instances`.
 
-- Quota to create the following resources: 1 VCN, 1 subnet, 1 Internet Gateway, 1 route rule, and 1 compute instance.
-
-If you don't have the required permissions and quota, contact your tenancy administrator. See [Policy Reference](https://docs.cloud.oracle.com/en-us/iaas/Content/Identity/Reference/policyreference.htm), [Service Limits](https://docs.cloud.oracle.com/en-us/iaas/Content/General/Concepts/servicelimits.htm), [Compartment Quotas](https://docs.cloud.oracle.com/iaas/Content/General/Concepts/resourcequotas.htm).
+- Quota to create the following resources: 1 VPC, 1 subnet, 1 Internet Gateway, 1 route rule, and 1 compute instance.
 
 ## Deploy Using the Terraform CLI
 
@@ -15,73 +15,79 @@ Now, you'll want a local copy of this repo.  You can make that with the commands
     cd ElasticSearch-AWS-VM-Ubuntu
     ls
 
-That should give you this:
-
-![](../images/simple/git-clone.png)
-
 ### Initialize the deployment
-Pick a module and change into the directory containing it (enterprise or community).
 
-We now need to initialize the directory with the module in it.  This makes the module aware of the OCI provider.  You can do this by running:
+We now need to initialize the directory.  This makes the module aware of the AWS provider.  You can do this by running:
 
     terraform init
 
 This gives the following output:
 
-![](../images/simple/terraform-init.png)
+![](./images/terraform-init.png)
+
+### Modify the configuration
+Create a `terraform.tfvars` file and add the following configuration to it:
+
+```hcl
+aws_access_key="your_aws_access_key"
+aws_secret_key="your_aws_secret_key"
+region="us-west-2"
+my_ip="your_public_ip"
+```
 
 ### Deploy the module
 Now for the main attraction.  Let's make sure the plan looks good:
 
-    terraform plan
+    terraform plan  -var-file="terraform.tfvars"
 
 That gives:
 
-![](../images/simple/terraform-plan.png)
+![](./images/terraform-plan.png)
 
 If that's good, we can go ahead and apply the deploy:
 
-    terraform apply
+    terraform apply -var-file="terraform.tfvars"
 
 You'll need to enter `yes` when prompted.  Once complete, you'll see something like this:
 
-![](../images/simple/terraform-apply.png)
+![](../images/terraform-apply.png)
 
 When the apply is complete, the infrastructure will be deployed, but cloud-init scripts will still be running.  Those will wrap up asynchronously.  So, it'll be a few more minutes before your cluster is accessible.  Now is a good time to get a coffee.
 
 
 ### Connect to Elasticsearch and Kibana
-When the module is deployed, you will see an output that shows the ELK VM public IP and generated ssh private key. Obtain the private key by accessing terraform console and decrypting sensitive value as follows:
-
-![](../images/simple/terraform-console.png)
-
-Next save the content of the generated ssh private key and grant minimum privileges:
-
-`chmod 400 id_rsa`
+When the module is deployed, you will see an output that shows the ELK VM public IP and generated ssh private key. The private key will be saved locally as ELK_private_key.pem. You can use this key to SSH into the ELK VM.
 
 Now let's build SSH tunnels for each product of ELK:
 
-`ELK_VM_public_IP = 132.145.139.235`
+`ELK_VM_public_IP = 13.40.16.206`
 
 Create an SSH tunnel for ports `9200` and `5601` with the following command:
 
-`ssh -i id_rsa -L 9200:localhost:9200 -L 5601:localhost:5601 opc@<ELK_VM_public_IP>`
+`ssh -i ELK_private_key.pem -L 9200:localhost:9200 -L 5601:localhost:5601 ubuntu@<ELK_VM_public_IP>`
+
+![](../images/ssh-tunnel.png)
 
 Now you can browse to (http://localhost:9200) for Elasticsearch, and (http://localhost:5601) for Kibana.
 
-![](../images/simple/elasticsearch.png)
+![](../images/elasticsearch.png)
 
-![](../images/simple/kibana.png)
+![](../images/kibana.png)
+
+### Access the Dashboards
+If you don't have an enrollment token, you can create one by clicking 'Create manually' and following the instructions.
+
+![](./images/starting-elastic.png)
 
 ### SSH to a Node
-These machines are using Oracle Enterprise Linux (OEL).  The default login is opc. You can SSH into the machine with a command like this:
+These machines are usingUbuntu.  The default login is ubuntu. You can SSH into the machine with a command like this:
 
-    ssh -i id_rsa opc@<ELK_VM_public_IP>
+    ssh -i ELK_private_key ubuntu@<ELK_VM_public_IP>
 
 ## View the Cluster in the Console
-You can also login to the web console [here](https://console.us-phoenix-1.oraclecloud.com/a/compute/instances) to view the IaaS that is running the cluster.
+You can also login to the web console [here](https://eu-west-2.console.aws.amazon.com/ec2/home?region=eu-west-2#Instances:) to view the IaaS that is running the cluster.
 
-![](../images/simple/console.png)
+![](./images/console.png)
 
 ### Destroy the Deployment
 When you no longer need the deployment, you can run this command to destroy it:
