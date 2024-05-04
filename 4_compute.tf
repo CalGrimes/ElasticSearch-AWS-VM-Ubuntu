@@ -46,4 +46,11 @@ resource "aws_instance" "ELK" {
     Name = "ELKVM"
     Group = "ELK"
   }
+
+  ebs_block_device {
+    device_name = "/dev/sda1"
+    volume_size = 30
+    volume_type = "gp2"
+    delete_on_termination = true
+  }
 }
