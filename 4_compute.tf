@@ -41,7 +41,7 @@ resource "aws_instance" "ELK" {
     device_index = 0
     network_interface_id = aws_network_interface.ELK.id
   }
-  user_data                   = base64encode("${timestamp()}\n${data.template_file.ELK.rendered}")
+  user_data                   = base64encode("${data.template_file.ELK.rendered}")
   tags = {
     Name = "ELKVM"
     Group = "ELK"
