@@ -49,8 +49,10 @@ resource "aws_instance" "ELK" {
 
   ebs_block_device {
     device_name = "/dev/sda1"
-    volume_size = 30
-    volume_type = "gp2"
+    volume_size = 250
+    volume_type = "gp3"
+    iops = 3000
+    throughput = 125
     delete_on_termination = true
   }
 }
