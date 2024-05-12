@@ -9,11 +9,10 @@
 ## Deploy Using the Terraform CLI
 
 ### Clone the repository
-Now, you'll want a local copy of this repo.  You can make that with the commands:
+Start with a local copy of this repo.  You can make that with the commands:
 
     git clone https://github.com/CalGrimes/ElasticSearch-AWS-VM-Ubuntu.git
     cd ElasticSearch-AWS-VM-Ubuntu
-    ls
 
 ### Initialize the deployment
 
@@ -44,45 +43,104 @@ That gives:
 
 ![](./images/terraform-plan.png)
 
-If that's good, we can go ahead and apply the deploy:
+If that's good, we can go ahead and apply the deployment with:
 
     terraform apply -var-file="terraform.tfvars"
 
 You'll need to enter `yes` when prompted.  Once complete, you'll see something like this:
 
-![](../images/terraform-apply.png)
+![](./images/terraform-apply.png)
 
-When the apply is complete, the infrastructure will be deployed, but cloud-init scripts will still be running.  Those will wrap up asynchronously.  So, it'll be a few more minutes before your cluster is accessible.  Now is a good time to get a coffee.
+When the apply is complete, the infrastructure will be deployed, but cloud-init scripts will still be running.  Those will wrap up asynchronously. So, it'll be a few more minutes before your cluster is accessible.  Now is a good time to get a coffee.
 
+### Configuring Elasticsearch and Kibana
+Once the module is deployed and you have waited for a few minutes, you can connect to the ELK VM and configure Elasticsearch and Kibana.
 
-### Connect to Elasticsearch and Kibana
-When the module is deployed, you will see an output that shows the ELK VM public IP and generated ssh private key. The private key will be saved locally as ELK_private_key.pem. You can use this key to SSH into the ELK VM.
+The output will show the ELK VM public IP and the generated ssh private key. The private key will be saved locally as ELK_private_key.pem. You can use this key to SSH into the ELK VM.
 
 Now let's build SSH tunnels for each product of ELK:
 
-`ELK_VM_public_IP = 13.40.16.206`
+`ELK_VM_public_IP = 13.40.13.172`
 
 Create an SSH tunnel for ports `9200` and `5601` with the following command:
 
-`ssh -i ELK_private_key.pem -L 9200:localhost:9200 -L 5601:localhost:5601 ubuntu@<ELK_VM_public_IP>`
+```
+ssh -i ELK_private_key.pem -L 9200:localhost:9200 -L 5601:localhost:5601 ubuntu@<ELK_VM_public_IP>
+```
 
-![](../images/ssh-tunnel.png)
+Once you are connected to the ELK VM. Ensure the cloud-init scripts have completed by checking status of elastic and kibana services with the following command:
+```
+systemctl status elasticsearch kibana
+```
+![](./images/elastic-kibana-status.png)
 
+Now you need to configure the network host in the Elasticsearch and Kibana configuration files. Run the following command to open the elasticsearch configuration file:
+
+```
+sudo vi /etc/elasticsearch/elasticsearch.yml
+```
+![](./images/elastic-config.png)
+
+Add the following line to the configuration file:
+
+`network.host: 0.0.0.0`
+
+Save and exit the file.
+
+Now open the kibana configuration file:
+```
+sudo vi /etc/kibana/kibana.yml
+```
+![](./images/kibana-config.png)
+
+Add the following line to the configuration file:
+`server.host: "0.0.0.0"`
+
+Save and exit the file.
+
+Now restart the Elasticsearch and Kibana services with the following command:
+
+```
+sudo systemctl restart elasticsearch kiabana
+```
+
+
+
+
+### Connect to Elasticsearch and Kibana
 Now you can browse to (http://localhost:9200) for Elasticsearch, and (http://localhost:5601) for Kibana.
 
-![](../images/elasticsearch.png)
+![](./images/elasticsearch.png)
 
-![](../images/kibana.png)
+To fetch your enrollment token, you can run the following command:
 
-### Access the Dashboards
-If you don't have an enrollment token, you can create one by clicking 'Create manually' and following the instructions.
+```
+sudo /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token --scope kibana
+```
 
+Paste the enrollment token and click 'Configure Elastic'
+
+![](./images/kibana-verification.png)
+
+Next, collect the Kibana verfication code by running the following command:
+
+```
+sudo /usr/share/kibana/bin/kibana-verification-code
+```
+
+Now wait for Elastic to set everything up. 
 ![](./images/starting-elastic.png)
 
-### SSH to a Node
-These machines are usingUbuntu.  The default login is ubuntu. You can SSH into the machine with a command like this:
+You'll then be presented with a login screen. The superuser is elastic. 
+![](./images/elastic-login.png)
+To retrieve the password, you can run the following command:
 
-    ssh -i ELK_private_key ubuntu@<ELK_VM_public_IP>
+```
+sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+```
+
+At last you can login to Kibana with the superuser credentials and start exploring the dashboard.
+![](./images/dashboard.png)
 
 ## View the Cluster in the Console
 You can also login to the web console [here](https://eu-west-2.console.aws.amazon.com/ec2/home?region=eu-west-2#Instances:) to view the IaaS that is running the cluster.
