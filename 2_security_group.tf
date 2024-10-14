@@ -31,7 +31,7 @@ resource "aws_vpc_security_group_ingress_rule" "es_my_ip" {
   from_port         = var.ESDataPort
   to_port           = var.ESDataPort
   ip_protocol       = "tcp"
-  cidr_ipv4 = var.my_ip
+  cidr_ipv4 = var.my_ip + "/32"
   description = "Allow Elasticsearch from my IP"
 
   tags = {
