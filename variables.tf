@@ -9,7 +9,7 @@ variable "vpc_id" {}
 variable "my_ip" {}
 
 variable "ami" {
-  default = "ami-005fc0f236362e99f" # Ubtuntu 22.04
+  default = "ami-03ceeb33c1e4abcd1" # Ubtuntu 22.04
 }
 
 variable "instance_type" {
